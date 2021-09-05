@@ -1,0 +1,51 @@
+theory Intersection
+  imports
+    Main
+begin
+
+type_alias Priority = nat
+
+datatype Origin = North | East | South | West
+
+datatype Direction = Left | Straight | Right
+
+datatype Path = Path Origin Direction
+
+fun origin :: "Path \<Rightarrow> Origin" where
+  "origin (Path orig _) = orig"
+
+fun direction :: "Path \<Rightarrow> Direction" where
+  "direction (Path _ dir) = dir"
+
+fun collide :: "Path \<Rightarrow> Path \<Rightarrow> bool" where
+  "collide _ _ = undefined"
+
+datatype TrafficSign =
+  Priority \<comment>\<open>306\<close>
+
+datatype Intersection = Intersection "Origin \<Rightarrow> TrafficSign set"
+
+fun priority :: "Intersection \<Rightarrow> Path \<Rightarrow> Priority" where
+  "priority _ _ = undefined"
+
+text\<open>
+  Do I even need the notion of a highest priority here?
+
+  If there are three cars/paths A,B,C with priorities 1,1,2 and paths A and B collide,
+  then C is allowed to drive first, leaving cars A and B. We only need the notion of a
+  highest priority if the priorities of A and B are allowed to change now.
+
+  In other words:
+  Does the priority of a car/path depend on another car/path?
+
+  The table does not consider this, but what about right before left?
+\<close>
+definition wf_intersection_priorities :: "Intersection \<Rightarrow> bool" where
+  "wf_intersection_priorities i = (\<forall>p q. origin p \<noteq> origin q \<and> priority i p = priority i q \<longrightarrow> \<not>collide p q)"
+
+definition wf_intersection_priorities_alt :: "Intersection \<Rightarrow> bool" where
+  "wf_intersection_priorities_alt i = (\<forall>p q. origin p \<noteq> origin q \<and> collide p q \<longrightarrow> priority i p \<noteq> priority i q)"
+
+lemma wf_intersection_priorities_alt_eq:
+  "wf_intersection_priorities i = wf_intersection_priorities_alt i"
+  using wf_intersection_priorities_def wf_intersection_priorities_alt_def by blast
