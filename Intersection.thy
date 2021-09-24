@@ -5,7 +5,7 @@ begin
 
 section\<open>Origin, Direction and Collision\<close>
 
-type_alias Priority = nat
+type_synonym Priority = nat
 
 datatype Origin = North | East | South | West
 
@@ -199,14 +199,13 @@ datatype TrafficSign =
 | RightBeforeLeft \<comment>\<open>102\<close>
 | GreenArrow \<comment>\<open>720\<close>
 
-(* Q: Is there another way to alias a function type *)
-datatype Intersection = Intersection "Origin \<Rightarrow> TrafficSign set"
-datatype Rules = Rules "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority"
+type_synonym Intersection = "Origin \<Rightarrow> TrafficSign set"
+type_synonym Rules = "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority"
 
 fun priority :: "Intersection \<Rightarrow> Rules \<Rightarrow> Path \<Rightarrow> Priority" where
-  "priority (Intersection i) (Rules r) (Path orig dir) = (
-    let signs = i orig in
-    let prios = (r dir) ` signs \<union> {0} in
+  "priority intersection rules (Path orig dir) = (
+    let signs = intersection orig in
+    let prios = (rules dir) ` signs \<union> {0} in
     Max prios
   )"
 
@@ -249,7 +248,7 @@ fun intersection :: "Origin \<Rightarrow> TrafficSign set" where
 | "intersection West = { Priority }"
 
 lemma counterexample:
-  "\<not> wf_intersection_rules (Intersection intersection) (Rules rules)"
+  "\<not> wf_intersection_rules intersection rules"
 proof -
   define p1 where "p1 = Path North Straight"
   define p2 where "p2 = Path South Left"
@@ -260,8 +259,8 @@ proof -
   have 1: "collide p1 p2"
     by (simp add: p1_def p2_def)
 
-  have 2: "priority (Intersection intersection) (Rules rules) p1 = 
-    priority (Intersection intersection) (Rules rules) p2"
+  have 2: "priority intersection rules p1 = 
+    priority intersection rules p2"
     unfolding p1_def p2_def by simp
 
   show ?thesis
