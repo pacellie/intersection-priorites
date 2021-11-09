@@ -41,8 +41,25 @@ fun rotate_origin_clockwise :: "Origin \<Rightarrow> nat \<Rightarrow> Origin" w
 | "rotate_origin_clockwise South n = rotate_origin_clockwise West (n-1)"
 | "rotate_origin_clockwise West n = rotate_origin_clockwise North (n-1)"
 
-fun rotate_path_clockwise :: "Path \<Rightarrow> nat \<Rightarrow> Path" where
-  "rotate_path_clockwise (Path orig dir) n = Path (rotate_origin_clockwise orig n) dir"
+definition rotate_path_clockwise :: "Path \<Rightarrow> nat \<Rightarrow> Path" where
+  "rotate_path_clockwise path n = 
+    (case path of (Path orig dir) \<Rightarrow> Path (rotate_origin_clockwise orig n) dir)"
+
+lemma rotate_path_clockwise_simps:
+  "rotate_path_clockwise (Path orig path) 0 = Path orig path"
+  "rotate_path_clockwise (Path North path) (Suc 0) = Path East path"
+  "rotate_path_clockwise (Path East path) (Suc 0) = Path South path"
+  "rotate_path_clockwise (Path South path) (Suc 0) = Path West path"
+  "rotate_path_clockwise (Path West path) (Suc 0) = Path North path"
+  "rotate_path_clockwise (Path North path) 2 = Path South path"
+  "rotate_path_clockwise (Path East path) 2 = Path West path"
+  "rotate_path_clockwise (Path South path) 2 = Path North path"
+  "rotate_path_clockwise (Path West path) 2 = Path East path"
+  "rotate_path_clockwise (Path North path) 3 = Path West path"
+  "rotate_path_clockwise (Path East path) 3 = Path North path"
+  "rotate_path_clockwise (Path South path) 3 = Path East path"
+  "rotate_path_clockwise (Path West path) 3 = Path South path"
+  unfolding rotate_path_clockwise_def by (auto simp: numeral_2_eq_2 numeral_3_eq_3)
 
 fun turns :: "Origin \<Rightarrow> nat" where
   "turns South = 0"
@@ -59,12 +76,12 @@ lemma rotate_origin_clockwise_add:
 
 lemma rotate_path_clockwise_add:
   "rotate_path_clockwise (rotate_path_clockwise p m) n = rotate_path_clockwise p (m + n)"
-  using rotate_origin_clockwise_add by (cases p) simp
+  using rotate_origin_clockwise_add unfolding rotate_path_clockwise_def by (cases p) simp
 
 lemma rotate_origin_clockwise_mod:
   "rotate_origin_clockwise orig n = rotate_origin_clockwise orig (n mod 4)"
   apply (induction n arbitrary: orig)
-  apply (auto simp: mod_Suc)
+   apply (auto simp: mod_Suc)
   subgoal premises prems for _ x
     using prems by (cases x) (auto simp: numeral_3_eq_3) 
   subgoal premises prems for _ x
@@ -73,33 +90,33 @@ lemma rotate_origin_clockwise_mod:
 
 lemma rotate_path_clockwise_mod:
   "rotate_path_clockwise p n = rotate_path_clockwise p (n mod 4)"
-  using rotate_origin_clockwise_mod by (cases p) simp
+  using rotate_origin_clockwise_mod rotate_path_clockwise_def by (cases p) simp
 
 lemma collide_id_origin:
   "origin p1 = origin p2 \<Longrightarrow> collide p1 p2"
   apply (cases p1; cases p2)
   apply (auto)
   subgoal premises prems for _ x _
-    using prems by (cases x) (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+    using prems rotate_path_clockwise_def by (cases x) (auto simp: numeral_2_eq_2 numeral_3_eq_3)
   done
 
 lemma collide_rotate0:
   "collide p1 p2 = collide (rotate_path_clockwise p1 0) (rotate_path_clockwise p2 0)"
-  by (cases p1; cases p2) simp
+  using rotate_path_clockwise_def by (cases p1; cases p2) simp
 
 lemma collide_rotate1:
   "collide p1 p2 = collide (rotate_path_clockwise p1 1) (rotate_path_clockwise p2 1)"
   apply (cases p1; cases p2)
   apply (auto simp: rotate_origin_clockwise_add)
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b; cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b; cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   done
 
@@ -108,14 +125,14 @@ lemma collide_rotate2:
   apply (cases p1; cases p2)
   apply (auto simp: rotate_origin_clockwise_add)
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b; cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b; cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   done
 
@@ -124,14 +141,14 @@ lemma collide_rotate3:
   apply (cases p1; cases p2)
   apply (auto simp: rotate_origin_clockwise_add)
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b; cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b; cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   done
 
@@ -162,20 +179,20 @@ lemma collide_com:
   apply (cases p1; cases p2)
   apply (auto)
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b;  cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   subgoal premises prems for a b c d
-    using prems
+    using prems rotate_path_clockwise_def
     apply (cases a; cases b;  cases c; cases d)
-    apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+                        apply (auto simp: numeral_2_eq_2 numeral_3_eq_3)
     done
   done
 
 lemma collide_nw_eq_collide_we:
   "collide (Path North d1) (Path South d2) = collide (Path West d1) (Path East d2)"
-  by (cases d1; cases d2) (auto simp: numeral_2_eq_2 numeral_3_eq_3)
+  using rotate_path_clockwise_def by (cases d1; cases d2) (auto simp: numeral_2_eq_2 numeral_3_eq_3)
 
 (* TODO: Flipping S-W S-E Symmetry *)
 
@@ -224,47 +241,72 @@ text\<open>
 definition wf_intersection_rules :: "Intersection \<Rightarrow> Rules \<Rightarrow> bool" where
   "wf_intersection_rules i r = (\<forall>p q. origin p \<noteq> origin q \<and> priority i r p = priority i r q \<longrightarrow> \<not>collide p q)"
 
-definition wf_intersection_rules_alt :: "Intersection \<Rightarrow> Rules \<Rightarrow> bool" where
-  "wf_intersection_rules_alt i r = (\<forall>p q. origin p \<noteq> origin q \<and> collide p q \<longrightarrow> priority i r p \<noteq> priority i r q)"
-
-lemma wf_intersection_rules_alt_eq:
-  "wf_intersection_rules i = wf_intersection_rules_alt i"
-  using wf_intersection_rules_def wf_intersection_rules_alt_def by blast
-
 section\<open>Examples\<close>
 
-(* TODO: Finish rules; adjust return type to `Priority option` *)
-fun rules :: "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority" where
-  "rules Left Priority = 4"
-| "rules Straight Priority = 5"
-| "rules Right Priority = 4"
-| "rules _ Yield = 2"
-| "rules _ _ = undefined"
-
 fun intersection :: "Origin \<Rightarrow> TrafficSign set" where
-  "intersection North = { Yield }"
-| "intersection East = { Priority }"
-| "intersection South = { Yield }"
-| "intersection West = { Priority }"
+  "intersection North = { Priority }"
+| "intersection East = { Yield }"
+| "intersection South = { Priority }"
+| "intersection West = { Yield }"
+
+(* TODO: Finish rules; adjust return type to `Priority option` *)
+fun current_rules :: "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority" where
+  "current_rules Left Priority = 4"
+| "current_rules Straight Priority = 5"
+| "current_rules Right Priority = 4"
+| "current_rules Left Yield = 2"
+| "current_rules Straight Yield = 2"
+| "current_rules Right Yield = 2"
+| "current_rules _ _ = undefined"
 
 lemma counterexample:
-  "\<not> wf_intersection_rules intersection rules"
+  "\<not> wf_intersection_rules intersection current_rules"
 proof -
-  define p1 where "p1 = Path North Straight"
-  define p2 where "p2 = Path South Left"
+  define p1 where "p1 = Path East Straight"
+  define p2 where "p2 = Path West Left"
 
   have 0: "origin p1 \<noteq> origin p2"
     unfolding p1_def p2_def by simp
 
   have 1: "collide p1 p2"
-    by (simp add: p1_def p2_def)
+    using rotate_path_clockwise_def by (simp add: p1_def p2_def)
 
-  have 2: "priority intersection rules p1 = 
-    priority intersection rules p2"
+  have 2: "priority intersection current_rules p1 = 
+    priority intersection current_rules p2"
     unfolding p1_def p2_def by simp
 
   show ?thesis
     using 0 1 2 wf_intersection_rules_def by blast
 qed
+
+fun adjusted_rules :: "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority" where
+  "adjusted_rules Left Priority = 4"
+| "adjusted_rules Straight Priority = 5"
+| "adjusted_rules Right Priority = 5"
+| "adjusted_rules Left Yield = 1"
+| "adjusted_rules Straight Yield = 2"
+| "adjusted_rules Right Yield = 2"
+| "adjusted_rules _ _ = undefined"
+
+lemma wf_adjusted_intersection_rules:
+  "wf_intersection_rules intersection adjusted_rules"
+  unfolding wf_intersection_rules_def
+proof (standard; standard; standard)
+  fix p q
+  assume asm: "origin p \<noteq> origin q \<and> priority intersection adjusted_rules p = priority intersection adjusted_rules q"
+
+  obtain origin_p path_p where p_def: "p = Path origin_p path_p"
+    using Path.exhaust by blast
+  obtain origin_q path_q where q_def: "q = Path origin_q path_q"
+    using Path.exhaust by blast
+
+  show "\<not> collide p q"
+    unfolding p_def q_def
+    apply (cases origin_p; cases origin_q; cases path_p; cases path_q)
+    using asm p_def q_def
+                        apply (auto simp: rotate_path_clockwise_simps)
+    done
+qed
+
 
 
