@@ -200,21 +200,21 @@ section\<open>Traffic Signs, Rules and Intersections\<close>
 
 datatype TrafficSign =
   PriorityLeft10 \<comment>\<open>1002-10\<close>
-| PriorityLeft12 \<comment>\<open>1002-12\<close>
-| PriorityLeft13 \<comment>\<open>1002-13\<close>
-| PriorityRight20 \<comment>\<open>1002-20\<close>
-| PriorityRight22 \<comment>\<open>1002-22\<close>
-| PriorityRight23 \<comment>\<open>1002-23\<close>
-| PriorityNoTurn11 \<comment>\<open>1002-11\<close>
-| PriorityNoTurn14 \<comment>\<open>1002-14\<close>
-| PriorityNoTurn21 \<comment>\<open>1002-21\<close>
-| PriorityNoTurn24 \<comment>\<open>1002-24\<close>
-| Priority \<comment>\<open>306\<close>
-| RightOfWay \<comment>\<open>301\<close>
-| Yield \<comment>\<open>205\<close>
-| Stop \<comment>\<open>206\<close>
-| RightBeforeLeft \<comment>\<open>102\<close>
-| GreenArrow \<comment>\<open>720\<close>
+  | PriorityLeft12 \<comment>\<open>1002-12\<close>
+  | PriorityLeft13 \<comment>\<open>1002-13\<close>
+  | PriorityRight20 \<comment>\<open>1002-20\<close>
+  | PriorityRight22 \<comment>\<open>1002-22\<close>
+  | PriorityRight23 \<comment>\<open>1002-23\<close>
+  | PriorityNoTurn11 \<comment>\<open>1002-11\<close>
+  | PriorityNoTurn14 \<comment>\<open>1002-14\<close>
+  | PriorityNoTurn21 \<comment>\<open>1002-21\<close>
+  | PriorityNoTurn24 \<comment>\<open>1002-24\<close>
+  | Priority \<comment>\<open>306\<close>
+  | RightOfWay \<comment>\<open>301\<close>
+  | Yield \<comment>\<open>205\<close>
+  | Stop \<comment>\<open>206\<close>
+  | RightBeforeLeft \<comment>\<open>102\<close>
+  | GreenArrow \<comment>\<open>720\<close>
 
 type_synonym Intersection = "Origin \<Rightarrow> TrafficSign set"
 type_synonym Rules = "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority"
@@ -307,6 +307,3 @@ proof (standard; standard; standard)
                         apply (auto simp: rotate_path_clockwise_simps)
     done
 qed
-
-
-
