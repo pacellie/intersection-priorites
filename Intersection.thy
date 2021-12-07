@@ -3,6 +3,7 @@ theory Intersection
     Main
 begin
 
+
 section\<open>Origin, Direction and Collision\<close>
 
 type_synonym Priority = nat
@@ -196,6 +197,7 @@ lemma collide_nw_eq_collide_we:
 
 (* TODO: Flipping S-W S-E Symmetry *)
 
+
 section\<open>Traffic Signs, Rules and Intersections\<close>
 
 datatype TrafficSign =
@@ -241,6 +243,7 @@ text\<open>
 definition wf_intersection_rules :: "Intersection \<Rightarrow> Rules \<Rightarrow> bool" where
   "wf_intersection_rules i r = (\<forall>p q. origin p \<noteq> origin q \<and> priority i r p = priority i r q \<longrightarrow> \<not>collide p q)"
 
+
 section\<open>Examples\<close>
 
 fun intersection :: "Origin \<Rightarrow> TrafficSign set" where
@@ -249,7 +252,6 @@ fun intersection :: "Origin \<Rightarrow> TrafficSign set" where
 | "intersection South = { Priority }"
 | "intersection West = { Yield }"
 
-(* TODO: Finish rules; adjust return type to `Priority option` *)
 fun current_rules :: "Direction \<Rightarrow> TrafficSign \<Rightarrow> Priority" where
   "current_rules Left Priority = 4"
 | "current_rules Straight Priority = 5"
