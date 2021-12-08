@@ -1,3 +1,88 @@
+## Formalization
+* Model a lanelet as an edges, model connections between lanelets as nodes.
+  type Direction = Left | Straight | Right
+  // might generalize s.t. there are different degrees of `Left`, i.e. 100, 101, 102, ... , 199 leftmost to rightmost left, but all still orientation `Left`
+  type Node = nat
+  type Edge = (nat, Direction, nat)
+  type RoadTopology = (Node set, Edge set)
+
+* Signals and signage.
+  type Signal = Authority | TrafficLight | Sign | Unsigned
+  // introduce an ordering Authority > TrafficLight > Sign > Unsigned
+
+  type Authority = (...)
+  type TrafficLight = Green | Amber | Red | RedAmber
+  type Sign = 205 | 206 | (...)
+
+  signage :: Node -> Signal set
+  // the signage of a node is applicable for all incoming edges.
+
+  relevant_signal :: Signage -> Signal
+  // according to the precedence rules of the StVO
+
+* Oncoming traffic.
+  oncoming :: Edge -> Edge -> bool
+
+* Right of.
+  right_of :: Node -> Node -> bool
+
+type RoadNetwork := RoadTopology + signage + oncoming + right_of
+
+Now take the view of a traffic participant located on a signaled node, do they have the right of way for a given path?
+
+* Participants/Paths and collision.
+  type Path = Edge list
+  origin :: Path -> Node
+  // the origin of the first edge
+  direction :: Path -> Direction
+  // the direction of the first edge
+  collide :: Path -> Path -> bool
+  // two paths collide iff they contain the same node or they contain two edges e1 e2 s.t oncoming
+  e1 e2 holds
+
+* Priority table.
+  type PriorityTable = Signal -> Direction -> nat
+
+* Right of way.
+  type Path = Edge list
+  has_right_of_way :: PriorityTable -> RoadNetwork -> Path -> Path -> bool
+  // `right of way` should only be well-defined for two paths which actually collide ???
+  // i.e. if two paths don't collide in any way does one have the right of way over the other one?
+
+Possible lemmas: (probably lots of well-formed assumptions missing in the following)
+
+* Well-formed priority table and road networks.
+  well_formed pt rn iff forall p1 p2. collide p1 p2 --> has_right_of_way pt rn p1 p2 xor has_right_of_way pt rn p2 p1
+  // maybe change the return type of has_right_of_way s.t. it p1 and p2 don't collide they both have
+  right of way
+
+We could then write a checker which given one fixed priority table checks if a given intersection is
+well-formed by checking all colliding pairs of paths for all possible signages (multiple possible
+due to dynamic signals such as traffic lights and authority signals).
+
+* StVO 36(1), 37(1): (hold by construction but one could show e.g.) if well_formed pt rn
+  signage n = S ==> forall s' in S. s > s' ==> relevant_singal signage[n := insert s S] = s
+
+* StVO 9(3)(4): if well_formed pt rn
+  direction p1 = Right ==> oncoming p1 p2 ==> not (has_right_of_way pt rn p1 p2)
+  direction p1 = Left ==> oncoming p1 p2 ==> not (has_right_of_way pt rn p1 p2)
+
+* StVO 8(1): if well_formed pt rn
+  collide p1 p2 ==> right_of (origin p1) (origin p2)  ==>
+  relevant_signal (origin p1) = Unsigned ==> relevant_signal (origin p1) = Unsigned ==>
+  has_right_of_way pt rn p1 p2
+  // might need to exclude roundabout case here StVO 8(1a)
+
+* One probably also want to prove something along the lines of: if well_formed pt rn
+  collide p1 p2 ==>
+  relevant_signal (origin p1) = Priority ==>
+  relevant_signal (origin p2) = Yield ==>
+  has_right_of_way pt rn p1 p2
+  // and similiar lemmas for other types of signal combinations
+
+
+
+
 ## Relevant Rules for Formalization
 
 ### Precedence
