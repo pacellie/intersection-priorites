@@ -1,30 +1,30 @@
 ## Examples of what we want to prove:
+* StVO 9(3):
+
+  A person wishing to ***turn off*** must allow ***oncoming*** vehicles to pass; (...)
+
+* StVO 9(4):
+
+  A person wishing to ***turn left*** must first allow ***oncoming*** traffic intending to turn right to pass. (...)
+
+* Give way sign (205):
+
+  A person operating a vehicle must give way.
+
+* Priority road sign (306):
+
+  This sign indicates priority until the next sign 205 (Give way), 206 (Stop) or 307 (End Priority road). (...)
+
+* StVO 8(1):
+
+  At intersections and junctions vehicles coming from the right have the right of way.  This does not apply: 1. if the right of way is specially regulated by traffic signs (sign 205 (Give way), 206 (Stop), 301 (Right of way), 306 (Priority Road)); or (...)
+
 * StVO 37(1):
 
   Light signals take precedence over priority rules and traffic signs regulating priority.
 
-* StVO 9(3):
-
-  A person wishing to turn off must allow oncoming vehicles to pass; (...)
-
-* StVO 9(4):
-
-  A person wishing to turn left must first allow oncoming traffic intending to turn right to pass. (...)
-
-* Give way (205):
-
-  A person operating a vehicle must give way.
-
-* Priority road (306):
-
-  This sign indicates priority until the next sign 205, 206 or 307. (...)
-
-* StVO 8(1):
-
-  At intersections and junctions vehicles coming from the right have the right of way.  This does not apply: 1. if the right of way is specially regulated by traffic signs (sign 205, 206, 301, 306); or (...)
-
 ## Formalization (Draft)
-* Model a lanelets as edges, model connections between lanelets as nodes.
+* Model lanelets as edges, model connections between lanelets as nodes.
   ```haskell
   type Direction = Left | Straight | Right
   ```
@@ -37,18 +37,21 @@
 
 * Signals and signage.
   ```haskell
-  type Signal = Authority | TrafficLight | Sign | Unsigned
+  type Signal = Authority | TrafficLight | Sign
   ```
-  We also introduce an ordering: `Authority > TrafficLight > Sign > Unsigned`
+  We also introduce an ordering: `Authority > TrafficLight > Sign`
 
   ```haskell
+  type Light = Green | Amber | Red | RedAmber
+
   type Authority = (...)
-  type TrafficLight = Green | Amber | Red | RedAmber
-  type Sign = Yield | Priority | (...)
+  type TrafficLight = (Light, Direction)
+  type Sign = Unsigned | GiveWay | Priority | (...)
+  -- TODO: annotate `Priority` with `Direction` (abknickende Vorfahrtsstraße)
 
   type Signage = Node -> Signal set
 
-  relevant_signal :: Signage -> Signal
+  relevant_signal :: Signage -> Node -> Signal
   ```
   The signage of a node is applicable for all incoming edges.
   The relevant signal is according to the precedence rules of the StVO which reflects the ordering introduced above.
@@ -57,27 +60,27 @@
   ```haskell
   type Oncoming = Edge -> Edge -> bool
   ```
-  Alternative: Insert more nodes, but leads to different problems.
-
   ![alt](oncoming.png)
+
+  Alternative: Insert more nodes, but leads to different problems.
 
 * Right of.
   ```haskell
   type RightOf = Node -> Node -> bool
   ```
-  Needed for `rechts-for-links`.
+  Needed for `rechts-vor-links`.
 
 ```haskell
 type RoadTopology = (Node set, Edge set, Oncoming, RightOf)
 ```
 
-Now take the view of a traffic participant located on/before a node, do they have the right of way for a given path?
+Traffic participants are located on/before a node, do they have the right of way for a given path?
 
 * Participants/Paths and collision.
   ```haskell
   type Path = Edge list
-  origin :: Path -> Node -- origin of the first edge in the path
-  direction :: Path -> Direction -- direction of the first edge in the path
+  origin :: Path -> Node -- start a of the first edge (a,d,b) in the path
+  direction :: Path -> Direction -- direction d of the first edge (a,d,b) in the path
   collide :: Path -> Path -> bool
   ```
   Two paths collide iff they each contain at least one common node or they contain two edges e1 e2 s.t. oncoming e1 e2 holds.
@@ -85,9 +88,10 @@ Now take the view of a traffic participant located on/before a node, do they hav
 * Right of way.
   ```haskell
   type PriorityTable = Signal -> Direction -> nat
-  type Path = Edge list
-  has_right_of_way :: RoadNetwork -> Signage -> Path -> Path -> bool
+  has_right_of_way :: RoadTopology -> Signage -> Path -> Path -> bool
   ```
+  Alternative:
+
   Should `has_right_of_way` only be well-defined for two paths which actually collide, i.e. if two paths don't collide in any way does one have the right of way over the other one?
   Or maybe change the return type of has_right_of_way s.t. if p1 and p2 don't collide they both have right of way.
 
@@ -101,24 +105,28 @@ Possible lemmas: (probably lots of well-formed assumptions missing in the follow
         has_right_of_way r s p1 p2 xor has_right_of_way r s p2 p1
   ```
 
-We could then write a checker which given one fixed priority table checks if a given intersection is well-formed by checking for all possible signages (dynamic signals such as traffic lights and authority signals) all colliding pairs of paths.
+We could then write a checker which given one fixed priority table checks if a given intersection is well-formed by checking for all possible signages all colliding pairs of paths(dynamic signals such as traffic lights and authority signals allow for multiple signages).
+
+This could probably also be used to define well_formed r s inductively, i.e. the empty
+signage (or no signs at all) should fulfill this statement due to the implicit assumptions about `RightOf`. Maybe one can then add signal under specific preconditions? (TODO)
 
 In the following we assume `well_formed r s`:
 
 * StVO 9(3), StVO 9(4):
 
-  A person wishing to turn off(???) must allow oncoming vehicles to pass; (...)
+  A person wishing to ***turn off*** must allow ***oncoming*** vehicles to pass; (...)
 
-  A person wishing to turn left must first allow oncoming traffic intending to turn right to pass. (...)
+  A person wishing to ***turn left*** must first allow ***oncoming*** traffic intending to turn right to pass. (...)
 
   ```
-  direction p1 = Left ==>
-    oncoming p2 p1 ==>
+  direction p1 != Straight ==>
+    oncoming p2 p1 ==>                 // p2 is the oncoming traffic for p1
       not (has_right_of_way r s p1 p2)
 
-  direction p1 = Right ==>
-    oncoming p1 p2 ==>
-      has_right_of_way r s p1 p2
+  direction p1 = Left ==>
+    oncoming p2 p1 ==>
+      direction p2 = Right ==>
+        not (has_right_of_way r s p1 p2)
   ```
 
 * StVO 8(1):
@@ -127,14 +135,14 @@ In the following we assume `well_formed r s`:
 
   ```
   collide p1 p2 ==>
-    right_of (origin p1) (origin p2)  ==>
+    relevant_signal (origin p1) = Unsigned ==>
       relevant_signal (origin p1) = Unsigned ==>
-        relevant_signal (origin p1) = Unsigned ==>
+        right_of (origin p1) (origin p2)  ==>             // p1 is right of p2
           has_right_of_way r s p1 p2
   ```
   Might need to exclude roundabout case here, see StVO 8(1a).
 
-* Right of way (301):
+* Right of way sign (301):
 
   This sign indicates priority at the next intersection or junction.
 
@@ -156,9 +164,9 @@ In the following we assume `well_formed r s`:
 
   Holds by construction but one can probably prove something along the lines off:
   ```
-  signage n = S ==>
+  S = signage n ==>
     forall s' in S. s > s' ==>
-      relevant_singal signage[n := insert s S] = s
+      relevant_singal (signage[n := insert s S]) = s
   ```
 
 
@@ -218,7 +226,7 @@ In the following we assume `well_formed r s`:
 
   Intersection of junction with traffic coming from the right having priority.
 
-#### Regulatory signs (Markings?)
+#### Regulatory signs (Markings: TODO)
 * Give way (205):
 
   A person operating a vehicle must give way.
