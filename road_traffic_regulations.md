@@ -24,7 +24,7 @@
   Light signals take precedence over priority rules and traffic signs regulating priority.
 
 ## Formalization (Draft)
-* Model lanelets as edges, model connections between lanelets as nodes.
+* Model lanelets as directed edges, model connections between lanelets as nodes.
   ```haskell
   type Direction = Left | Straight | Right
   ```
@@ -51,7 +51,7 @@
 
   type Signage = Node -> Signal set
 
-  relevant_signal :: Signage -> Node -> Signal
+  relevant_signal :: Signage -> Node -> Direction -> Signal
   ```
   The signage of a node is applicable for all incoming edges.
   The relevant signal is according to the precedence rules of the StVO which reflects the ordering introduced above.
@@ -60,8 +60,6 @@
   ```haskell
   type Oncoming = Edge -> Edge -> bool
   ```
-  ![alt](oncoming.png)
-
   Alternative: Insert more nodes, but leads to different problems.
 
 * Right of.
@@ -97,20 +95,24 @@ Traffic participants are located on/before a node, do they have the right of way
 
 Possible lemmas: (probably lots of well-formed assumptions missing in the following)
 
-* Well-formed road topology and signage.
+* Compatible road topology and signage.
   ```isabelle
-  well_formed r s iff
+  compatible r s iff
     forall p1 p2.
       collide p1 p2 -->
         has_right_of_way r s p1 p2 xor has_right_of_way r s p2 p1
   ```
 
-We could then write a checker which given one fixed priority table checks if a given intersection is well-formed by checking for all possible signages all colliding pairs of paths(dynamic signals such as traffic lights and authority signals allow for multiple signages).
+We could then write a checker which given one fixed priority table checks if a given intersection is compatible by checking for all possible signages all colliding pairs of paths(dynamic signals such as traffic lights and authority signals allow for multiple signages).
 
-This could probably also be used to define well_formed r s inductively, i.e. the empty
+This could probably also be used to define compatible r s inductively, i.e. the empty
 signage (or no signs at all) should fulfill this statement due to the implicit assumptions about `RightOf`. Maybe one can then add signal under specific preconditions? (TODO)
 
-In the following we assume `well_formed r s`:
+In the following we assume `compatible r s`.
+
+**Important**:
+
+We can only try to prove the following for one ***specific*** instance of a road topology and signage...
 
 * StVO 9(3), StVO 9(4):
 
